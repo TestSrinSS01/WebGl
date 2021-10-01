@@ -138,40 +138,40 @@ class Buffer {
         return new Float32Array(arr)
     }
 }
-class Button {
-    constructor(x, y, w, h, colour, callback, texture) {
-        this.x = x;
-        this.y = y;
-        this.w = w;
-        this.h = h;
-        this.colour = colour;
-        this.callback = callback;
-        this.texture = texture;
-    }
-    add_offset(x, y) {
-        this.x += x
-        this.y += y
-    }
-    get vertices() {
-        return new Buffer(
-            [this.x, this.y,                        this.colour[0], this.colour[1], this.colour[2], 1.0],
-                   [this.x + this.w, this.y,                this.colour[0], this.colour[1], this.colour[2], 1.0],
-                   [this.x + this.w,  this.y + this.h,      this.colour[0], this.colour[1], this.colour[2], 1.0],
-                   [this.x + this.w,  this.y + this.h,      this.colour[0], this.colour[1], this.colour[2], 1.0],
-                   [this.x,  this.y + this.h,               this.colour[0], this.colour[1], this.colour[2], 1.0],
-                   [this.x, this.y,                         this.colour[0], this.colour[1], this.colour[2], 1.0]
-        )
-    }
-    click(x, y) {
-        if (this.hover(x, y)) this.callback(this)
-    }
-    hover(x, y) {
-        return x >= this.x && x <= (this.x + this.w) && y >= this.y && y <= (this.y + this.h)
-    }
-}
-class Box {
-
-}
+// class Button {
+//     constructor(x, y, w, h, colour, callback, texture) {
+//         this.x = x;
+//         this.y = y;
+//         this.w = w;
+//         this.h = h;
+//         this.colour = colour;
+//         this.callback = callback;
+//         this.texture = texture;
+//     }
+//     add_offset(x, y) {
+//         this.x += x
+//         this.y += y
+//     }
+//     get vertices() {
+//         return new Buffer(
+//             [this.x, this.y,                        this.colour[0], this.colour[1], this.colour[2], 1.0],
+//                    [this.x + this.w, this.y,                this.colour[0], this.colour[1], this.colour[2], 1.0],
+//                    [this.x + this.w,  this.y + this.h,      this.colour[0], this.colour[1], this.colour[2], 1.0],
+//                    [this.x + this.w,  this.y + this.h,      this.colour[0], this.colour[1], this.colour[2], 1.0],
+//                    [this.x,  this.y + this.h,               this.colour[0], this.colour[1], this.colour[2], 1.0],
+//                    [this.x, this.y,                         this.colour[0], this.colour[1], this.colour[2], 1.0]
+//         )
+//     }
+//     click(x, y) {
+//         if (this.hover(x, y)) this.callback(this)
+//     }
+//     hover(x, y) {
+//         return x >= this.x && x <= (this.x + this.w) && y >= this.y && y <= (this.y + this.h)
+//     }
+// }
+// class Box {
+//
+// }
 
 const x = 10, y = 10, w = 100, h = 100;
 
