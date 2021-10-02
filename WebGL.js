@@ -89,9 +89,7 @@ class Shader {
     }
 }
 class Window {
-    constructor(gl, width, height) {
-        this.width = width
-        this.height = height
+    constructor(gl) {
         this.vao = new VertexArray(gl)
         this.vbo = new VertexBuffer(gl, new Float32Array(1600), gl.DYNAMIC_DRAW)
         this.layout = new Layout()
@@ -121,10 +119,16 @@ class Window {
     render(callback = () => {}) {
         this.shader.use()
         const mvp = glMatrix.mat4.create()
-        glMatrix.mat4.ortho(mvp, 0, this.width, 0, this.height, -1, 1)
+        glMatrix.mat4.ortho(mvp, 0, 600, 0, 400, -1, 1)
         this.shader.use()
         this.shader.setUniformMat4fv("mvp", mvp)
         callback()
+    }
+    set_width(val) {
+        this.width = val
+    }
+    set_height(val) {
+        this.height = val
     }
 }
 class Buffer {
@@ -177,24 +181,40 @@ const x = 10, y = 10, w = 100, h = 100;
 
 const buffer = new Buffer(
     [x, y,              1.0, 0.0, 0.0, 1.0],
-            [x + w, y,          0.0, 0.0, 1.0, 1.0],
-            [x + w,  y + h,     0.0, 1.0, 0.0, 1.0],
-            [x + w,  y + h,     0.0, 1.0, 0.0, 1.0],
-            [x,  y + h,         1.0, 1.0, 0.0, 1.0],
-            [x, y,              1.0, 0.0, 0.0, 1.0]
+    [x + w, y,          0.0, 0.0, 1.0, 1.0],
+    [x + w,  y + h,     0.0, 1.0, 0.0, 1.0],
+    [x + w,  y + h,     0.0, 1.0, 0.0, 1.0],
+    [x,  y + h,         1.0, 1.0, 0.0, 1.0],
+    [x, y,              1.0, 0.0, 0.0, 1.0]
 )
 
 const canvas = document.getElementById("foo")
+const body = document.getElementById("body")
+console.log(`body width = ${body.clientWidth}`)
+const body_width = body.clientWidth
+console.log(body_width)
+console.log(canvas.clientWidth)
+if (body_width < canvas.clientWidth) 
+    canvas.width = body_width - 10
+else 
+    canvas.width = 600
+canvas.height = canvas.width * (2 / 3)
 const gl = canvas.getContext('webgl2')
-const win = new Window(gl, 600, 400)
+const win = new Window(gl)
 
 canvas.addEventListener('click', event => {
     win.click(event.clientX, 400 - event.clientY)
 })
-
-win.render(() => {
-    gl.clearColor(0, 0, 0, 1)
-    gl.clear(gl.COLOR_BUFFER_BIT)
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(buffer.to_float_array()))
-    gl.drawArrays(gl.TRIANGLES, 0, buffer.length)
+window.addEventListener('resize', event => {
+    render()
 })
+function render() {
+    win.render(() => {
+        gl.clearColor(0, 0, 0, 1)
+        gl.clear(gl.COLOR_BUFFER_BIT)
+        gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(buffer.to_float_array()))
+        gl.drawArrays(gl.TRIANGLES, 0, buffer.length)
+    })
+}
+
+render()
