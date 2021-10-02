@@ -87,34 +87,120 @@ class Shader {
         this.use()
         this.gl.uniformMatrix4fv(this.gl.getUniformLocation(this.program, name), false, mat)
     }
+    setUniform1iv(name, arr) {
+        this.use()
+        this.gl.uniform1iv(this.gl.getUniformLocation(this.program, name), arr)
+    }
+}
+class Texture {
+    constructor(gl, slot, path) {
+        this.gl = gl
+        this.slot = slot
+        this.path = path
+        this.texture = gl.createTexture()
+        gl.activeTexture(gl.TEXTURE0 + slot)
+        gl.bindTexture(gl.TEXTURE_2D, this.texture)
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]))
+        const image = new Image();
+        image.src = this.path;
+        const isPowerOf2 = value => (value & (value - 1)) === 0
+        image.addEventListener('load', () => {
+            console.log(this.path)
+            gl.bindTexture(gl.TEXTURE_2D, this.texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+            if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
+                gl.generateMipmap(gl.TEXTURE_2D);
+            } else {
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            }
+        })
+    }
+    bind() {
+        this.gl.activeTexture(gl.TEXTURE0 + this.slot)
+        gl.bindTexture(gl.TEXTURE_2D, this.texture)
+    }
 }
 class Window {
     constructor(gl) {
+        gl.enable(gl.BLEND)
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+        this.tex = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
         this.vao = new VertexArray(gl)
         this.vbo = new VertexBuffer(gl, new Float32Array(1600), gl.DYNAMIC_DRAW)
         this.layout = new Layout()
         this.layout.add(2, 0)
         this.layout.add(4, 2)
+        this.layout.add(2, 6)
+        this.layout.add(1, 8)
         this.vao.add_layout(this.vbo, this.layout)
         this.shader = new Shader(gl,
             "attribute vec4 aPos;\n\
                       attribute vec4 aColour;\n\
+                      attribute vec2 aTexCord;\n\
+                      attribute float aSlot;\n\
+                      varying vec2 vTexCord;\n\
+                      varying float vSlot;\n\
                       varying vec4 vColour;\n\
                       uniform mat4 mvp;\n\
                       void main() {\n\
                           gl_Position = mvp * aPos;\n\
                           vColour = aColour;\n\
+                          vTexCord = aTexCord;\n\
+                          vSlot = aSlot;\n\
                       }\n\
                       ",
             "precision mediump float;\n\
+                        #define i1 1\n\
                         varying vec4 vColour;\n\
+                        varying vec2 vTexCord;\n\
+                        varying float vSlot;\n\
+                        uniform sampler2D tex[16];\n\
                         void main() {\n\
-                            gl_FragColor = vColour;\n\
+                            int slot = int(vSlot);\
+                            if (slot == 0) {\n\
+                                gl_FragColor = vColour;\n\
+                            }\n\
+                            else {\n\
+                                if (slot == 1)\n\
+                                    gl_FragColor = texture2D(tex[1], vTexCord);\n\
+                                if (slot == 2)\n\
+                                    gl_FragColor = texture2D(tex[2], vTexCord);\n\
+                                if (slot == 3)\n\
+                                    gl_FragColor = texture2D(tex[3], vTexCord);\n\
+                                if (slot == 4)\n\
+                                    gl_FragColor = texture2D(tex[4], vTexCord);\n\
+                                if (slot == 5)\n\
+                                    gl_FragColor = texture2D(tex[5], vTexCord);\n\
+                                if (slot == 6)\n\
+                                    gl_FragColor = texture2D(tex[6], vTexCord);\n\
+                                if (slot == 7)\n\
+                                    gl_FragColor = texture2D(tex[7], vTexCord);\n\
+                                if (slot == 8)\n\
+                                    gl_FragColor = texture2D(tex[8], vTexCord);\n\
+                                if (slot == 9)\n\
+                                    gl_FragColor = texture2D(tex[9], vTexCord);\n\
+                                if (slot == 10)\n\
+                                    gl_FragColor = texture2D(tex[10], vTexCord);\n\
+                                if (slot == 11)\n\
+                                    gl_FragColor = texture2D(tex[11], vTexCord);\n\
+                                if (slot == 12)\n\
+                                    gl_FragColor = texture2D(tex[12], vTexCord);\n\
+                                if (slot == 13)\n\
+                                    gl_FragColor = texture2D(tex[13], vTexCord);\n\
+                                if (slot == 14)\n\
+                                    gl_FragColor = texture2D(tex[14], vTexCord);\n\
+                                if (slot == 15)\n\
+                                    gl_FragColor = texture2D(tex[15], vTexCord);\n\
+                            }\n\
                         }"
         )
     }
     click(x, y) {
-
+        console.log(`x = ${x}, y = ${y}`)
+        render()
     }
     render(callback = () => {}) {
         this.shader.use()
@@ -122,13 +208,8 @@ class Window {
         glMatrix.mat4.ortho(mvp, 0, 600, 0, 400, -1, 1)
         this.shader.use()
         this.shader.setUniformMat4fv("mvp", mvp)
+        this.shader.setUniform1iv("tex", this.tex)
         callback()
-    }
-    set_width(val) {
-        this.width = val
-    }
-    set_height(val) {
-        this.height = val
     }
 }
 class Buffer {
@@ -143,34 +224,41 @@ class Buffer {
     }
 }
 // class Button {
-//     constructor(x, y, w, h, colour, callback, texture) {
+//     constructor(x, y, w, h, colour, callback) {
 //         this.x = x;
 //         this.y = y;
 //         this.w = w;
 //         this.h = h;
 //         this.colour = colour;
 //         this.callback = callback;
-//         this.texture = texture;
 //     }
 //     add_offset(x, y) {
 //         this.x += x
 //         this.y += y
 //     }
-//     get vertices() {
-//         return new Buffer(
-//             [this.x, this.y,                        this.colour[0], this.colour[1], this.colour[2], 1.0],
-//                    [this.x + this.w, this.y,                this.colour[0], this.colour[1], this.colour[2], 1.0],
-//                    [this.x + this.w,  this.y + this.h,      this.colour[0], this.colour[1], this.colour[2], 1.0],
-//                    [this.x + this.w,  this.y + this.h,      this.colour[0], this.colour[1], this.colour[2], 1.0],
-//                    [this.x,  this.y + this.h,               this.colour[0], this.colour[1], this.colour[2], 1.0],
-//                    [this.x, this.y,                         this.colour[0], this.colour[1], this.colour[2], 1.0]
-//         )
-//     }
+//     get vertices() {}
 //     click(x, y) {
 //         if (this.hover(x, y)) this.callback(this)
 //     }
 //     hover(x, y) {
 //         return x >= this.x && x <= (this.x + this.w) && y >= this.y && y <= (this.y + this.h)
+//     }
+// }
+// class ChessButton extends Button {
+//     constructor(x, y, w, h, colour, callback, piece) {
+//         super(x, y, w, h, colour, callback);
+//         this.piece = piece
+//     }
+//
+//     get vertices() {
+//         return new Buffer(
+//             [this.x, this.y,                        this.colour[0], this.colour[1], this.colour[2], 1.0],
+//             [this.x + this.w, this.y,                this.colour[0], this.colour[1], this.colour[2], 1.0],
+//             [this.x + this.w,  this.y + this.h,      this.colour[0], this.colour[1], this.colour[2], 1.0],
+//             [this.x + this.w,  this.y + this.h,      this.colour[0], this.colour[1], this.colour[2], 1.0],
+//             [this.x,  this.y + this.h,               this.colour[0], this.colour[1], this.colour[2], 1.0],
+//             [this.x, this.y,                         this.colour[0], this.colour[1], this.colour[2], 1.0]
+//         );
 //     }
 // }
 // class Box {
@@ -180,34 +268,49 @@ class Buffer {
 const x = 10, y = 10, w = 100, h = 100;
 
 const buffer = new Buffer(
-    [x, y,              1.0, 0.0, 0.0, 1.0],
-    [x + w, y,          0.0, 0.0, 1.0, 1.0],
-    [x + w,  y + h,     0.0, 1.0, 0.0, 1.0],
-    [x + w,  y + h,     0.0, 1.0, 0.0, 1.0],
-    [x,  y + h,         1.0, 1.0, 0.0, 1.0],
-    [x, y,              1.0, 0.0, 0.0, 1.0]
+    [x, y,              1.0, 0.0, 0.0, 1.0,     0, 1,   1],
+    [x + w, y,          0.0, 0.0, 1.0, 1.0,      1, 1,   1],
+    [x + w,  y + h,     0.0, 1.0, 0.0, 1.0,      1, 0,   1],
+    [x + w,  y + h,     0.0, 1.0, 0.0, 1.0,      1, 0,   1],
+    [x,  y + h,         1.0, 1.0, 0.0, 1.0,      0, 0,   1],
+    [x, y,              1.0, 0.0, 0.0, 1.0,      0, 1,   1],
+
+    [x + w, y + h,              1.0, 0.0, 0.0, 1.0,     0, 1,   2],
+    [x + w * 2, y + h,          0.0, 0.0, 1.0, 1.0,      1, 1,   2],
+    [x + w * 2,  y + h * 2,     0.0, 1.0, 0.0, 1.0,      1, 0,   2],
+    [x + w * 2,  y + h * 2,     0.0, 1.0, 0.0, 1.0,      1, 0,   2],
+    [x + w,  y + h * 2,         1.0, 1.0, 0.0, 1.0,      0, 0,   2],
+    [x + w, y + h,              1.0, 0.0, 0.0, 1.0,      0, 1,   2]
 )
 
-const canvas = document.getElementById("foo")
-const body = document.getElementById("body")
-console.log(`body width = ${body.clientWidth}`)
-const body_width = body.clientWidth
-console.log(body_width)
-console.log(canvas.clientWidth)
-if (body_width < canvas.clientWidth) 
-    canvas.width = body_width - 10
-else 
-    canvas.width = 600
+const canvas = document.getElementById("canvas")
+const html = document.getElementById("html")
+if (html.clientWidth <= 600) {
+    canvas.width = html.clientWidth - 10
+}
+else canvas.width = 600
 canvas.height = canvas.width * (2 / 3)
 const gl = canvas.getContext('webgl2')
 const win = new Window(gl)
 
 canvas.addEventListener('click', event => {
-    win.click(event.clientX, 400 - event.clientY)
+    win.click(event.clientX - canvas.offsetLeft, canvas.height - (event.clientY - canvas.offsetTop))
 })
-window.addEventListener('resize', event => {
+window.addEventListener('resize', () => {
+    if (html.clientWidth <= 600) {
+        canvas.width = html.clientWidth - 10;
+    }
+    else canvas.width = 600
+    canvas.height = canvas.width * ( 2 / 3 );
     render()
 })
+window.addEventListener('load', render)
+
+const texture = new Texture(gl, 1, "resources/chess_com.png")
+texture.bind()
+const king = new Texture(gl, 2, "resources/textures/wk.png")
+king.bind()
+
 function render() {
     win.render(() => {
         gl.clearColor(0, 0, 0, 1)
