@@ -105,7 +105,6 @@ class Texture {
         image.src = this.path;
         const isPowerOf2 = value => (value & (value - 1)) === 0
         image.addEventListener('load', () => {
-            console.log(this.path)
             gl.bindTexture(gl.TEXTURE_2D, this.texture);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
             if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
@@ -124,6 +123,7 @@ class Texture {
     }
 }
 class Window {
+    static textures = []
     constructor(gl) {
         gl.enable(gl.BLEND)
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
@@ -210,6 +210,15 @@ class Window {
         this.shader.setUniformMat4fv("mvp", mvp)
         this.shader.setUniform1iv("tex", this.tex)
         callback()
+    }
+    static load_texture(gl, slot, ...paths) {
+        paths.forEach(path => {
+            const texture = new Texture(gl, slot, `resources/textures/${path}.png`)
+            this.textures = this.textures.concat({
+                "name": path,
+                "texture": texture
+            })
+        })
     }
 }
 class Buffer {
@@ -306,10 +315,8 @@ window.addEventListener('resize', () => {
 })
 window.addEventListener('load', render)
 
-const texture = new Texture(gl, 1, "resources/chess_com.png")
-texture.bind()
-const king = new Texture(gl, 2, "resources/textures/wk.png")
-king.bind()
+Window.load_texture(gl, 1, "wk")
+Window.load_texture(gl, 2, "bk")
 
 function render() {
     win.render(() => {
