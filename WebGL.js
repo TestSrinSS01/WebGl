@@ -146,6 +146,7 @@ class Window {
         "t": "target"
     }
     constructor(gl) {
+        this.gl = gl
         gl.enable(gl.BLEND)
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
         this.tex = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
@@ -235,19 +236,27 @@ class Window {
                             }
                         }`
         )
+        this.boxes = []
+    }
+    add_box(box) {
+        this.boxes = this.boxes.concat(box)
     }
     click(x, y) {
-        console.log(`x = ${x}, y = ${y}`)
+        this.boxes.filter(it => it.is_active).forEach(it => it.click(x, y))
         this.render()
     }
     render(callback = () => {}) {
-        this.shader.use()
+        this.gl.clearColor(0, 0, 0, 1)
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT)
         const mvp = glMatrix.mat4.create()
         glMatrix.mat4.ortho(mvp, 0, 600, 0, 400, -1, 1)
         this.shader.use()
         this.shader.setUniformMat4fv("mvp", mvp)
         this.shader.setUniform1iv("tex", this.tex)
         callback()
+        this.boxes.forEach(it => {
+            it.render()
+        })
     }
     static load_texture(gl, slot, ...paths) {
         paths.forEach(path => {
@@ -269,120 +278,122 @@ class Buffer {
         return new Float32Array(this.to_array())
     }
 }
-// class Button {
-//     constructor(x, y, w, h, colour, callback) {
-//         this.x = x;
-//         this.y = y;
-//         this.w = w;
-//         this.h = h;
-//         this.colour = colour;
-//         this.callback = callback;
-//     }
-//     add_offset(x, y) {
-//         this.x += x
-//         this.y += y
-//     }
-//     get vertices() {}
-//     click(x, y) {
-//         if (this.hover(x, y)) this.callback(this)
-//     }
-//     hover(x, y) {
-//         return x >= this.x && x <= (this.x + this.w) && y >= this.y && y <= (this.y + this.h)
-//     }
-//     render() {}
-// }
-// class ChessButton extends Button {
-//     constructor(x, y, w, h, colour, callback, piece) {
-//         super(x, y, w, h, colour, callback);
-//         this.piece = piece
-//         this.colour_cpy = colour
-//         this.is_target = false
-//         this.index = this.y / 50 * 8 + this.x / 50
-//         this.targets = []
-//     }
-//
-//     get vertices() {
-//         let target_slot = 0
-//         if (this.is_target) {
-//             const texture = Window.textures["target"]
-//             texture.bind()
-//             target_slot = texture.slot
-//         }
-//         let piece_slot = 0
-//         if (this.piece !== '\0') {
-//             const texture = Window.textures[Window.pieces_map[this.piece]]
-//             texture.bind()
-//             piece_slot = texture.slot
-//         }
-//         return new Buffer(
-//             [this.x, this.y,                            this.colour[0], this.colour[1], this.colour[2], 1,    0, 0,    0],
-//             [(this.x + this.width), this.y,                     this.colour[0], this.colour[1], this.colour[2], 1.0,    0, 0,    0],
-//             [(this.x + this.width), (this.y + this.height),     this.colour[0], this.colour[1], this.colour[2], 1.0,    0, 0,    0],
-//             [(this.x + this.width), (this.y + this.height),     this.colour[0], this.colour[1], this.colour[2], 1.0,    0, 0,    0],
-//             [this.x, (this.y + this.height),                    this.colour[0], this.colour[1], this.colour[2], 1.0,    0, 0,    0],
-//             [this.x, this.y,                                    this.colour[0], this.colour[1], this.colour[2], 1.0,    0, 0,    0],
-//
-//             [this.x, this.y,                                    0, 0, 0, 0,       0, 1,   target_slot],
-//             [(this.x + this.width), this.y,                     0, 0, 0, 0,       1, 1,   target_slot],
-//             [(this.x + this.width), (this.y + this.height),     0, 0, 0, 0,       1, 0,   target_slot],
-//             [(this.x + this.width), (this.y + this.height),     0, 0, 0, 0,       1, 0,   target_slot],
-//             [this.x, (this.y + this.height),                    0, 0, 0, 0,       0, 0,   target_slot],
-//             [this.x, this.y,                                    0, 0, 0, 0,       0, 1,   target_slot],
-//
-//             [this.x, this.y,                                    0, 0, 0, 0,       0, 1,   piece_slot],
-//             [(this.x + this.width), this.y,                     0, 0, 0, 0,       1, 1,   piece_slot],
-//             [(this.x + this.width), (this.y + this.height),     0, 0, 0, 0,       1, 0,   piece_slot],
-//             [(this.x + this.width), (this.y + this.height),     0, 0, 0, 0,       1, 0,   piece_slot],
-//             [this.x, (this.y + this.height),                    0, 0, 0, 0,       0, 0,   piece_slot],
-//             [this.x, this.y,                                    0, 0, 0, 0,       0, 1,   piece_slot]
-//         );
-//     }
-//     has_target(button) {
-//         return this.targets.includes(button)
-//     }
-//     add_target(button) {
-//         button.is_target = true
-//         this.targets = this.targets.concat(button)
-//     }
-//     clear_targets() {
-//         this.targets.forEach(target => target.is_target = false)
-//         this.targets = []
-//     }
-// }
-// class Box {
-//     constructor(gl, x, y, is_active) {
-//         this.gl = gl
-//         this.x = x
-//         this.y = y
-//         this.is_active = is_active
-//         this.buttons = []
-//         this.previous_button = null
-//     }
-//     add_button(button) {
-//         button.add_offset(this.x, this.y)
-//         this.buttons = this.buttons.concat(button)
-//     }
-//     render() {
-//         if (this.buttons.length !== 0) {
-//             let buffer = []
-//             let len = 0
-//             this.buttons.forEach(button => {
-//                 const vertices = button.vertices
-//                 buffer = buffer.concat(vertices.to_array())
-//                 len += vertices.length
-//             })
-//             this.gl.bufferSubData(this.gl.ARRAY_BUFFER, 0, new Float32Array(buffer))
-//             this.gl.drawArrays(this.gl.TRIANGLES, 0, len)
-//             this.buttons.forEach(button => button.render())
-//         }
-//     }
-//     click(x, y) {
-//         this.buttons.forEach(button => button.click(x, y))
-//     }
-//     hover(x, y) {
-//         this.buttons.forEach(button => button.hover(x, y))
-//     }
-// }
+class Button {
+    constructor(x, y, w, h, colour, callback) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.colour = colour;
+        this.callback = callback;
+    }
+    add_offset(x, y) {
+        this.x += x
+        this.y += y
+    }
+    get vertices() {}
+    click(x, y) {
+        if (this.hover(x, y)) {
+            this.callback(this)
+        }
+    }
+    hover(x, y) {
+        return (x >= this.x) && (x <= (this.x + this.w)) && (y >= this.y) && (y <= (this.y + this.h))
+    }
+    render() {}
+}
+class ChessButton extends Button {
+    constructor(x, y, w, h, colour, callback, piece) {
+        super(x, y, w, h, colour, callback);
+        this.piece = piece
+        this.colour_cpy = colour
+        this.is_target = false
+        this.index = this.y / 50 * 8 + this.x / 50
+        this.targets = []
+    }
+
+    get vertices() {
+        let target_slot = 0
+        if (this.is_target) {
+            const texture = Window.textures["target"]
+            texture.bind()
+            target_slot = texture.slot
+        }
+        let piece_slot = 0
+        if (this.piece !== '\0') {
+            const texture = Window.textures[Window.pieces_map[this.piece]]
+            texture.bind()
+            piece_slot = texture.slot
+        }
+        return new Buffer(
+            [this.x, this.y,                            this.colour[0], this.colour[1], this.colour[2], 1,    0, 0,    0],
+            [(this.x + this.w), this.y,                     this.colour[0], this.colour[1], this.colour[2], 1,    0, 0,    0],
+            [(this.x + this.w), (this.y + this.h),     this.colour[0], this.colour[1], this.colour[2], 1,    0, 0,    0],
+            [(this.x + this.w), (this.y + this.h),     this.colour[0], this.colour[1], this.colour[2], 1,    0, 0,    0],
+            [this.x, (this.y + this.h),                    this.colour[0], this.colour[1], this.colour[2], 1,    0, 0,    0],
+            [this.x, this.y,                                    this.colour[0], this.colour[1], this.colour[2], 1,    0, 0,    0],
+
+            [this.x, this.y,                                    0, 0, 0, 0,       0, 1,   target_slot],
+            [(this.x + this.w), this.y,                         0, 0, 0, 0,       1, 1,   target_slot],
+            [(this.x + this.w), (this.y + this.h),              0, 0, 0, 0,       1, 0,   target_slot],
+            [(this.x + this.w), (this.y + this.h),              0, 0, 0, 0,       1, 0,   target_slot],
+            [this.x, (this.y + this.h),                         0, 0, 0, 0,       0, 0,   target_slot],
+            [this.x, this.y,                                    0, 0, 0, 0,       0, 1,   target_slot],
+
+            [this.x, this.y,                                    0, 0, 0, 0,       0, 1,   piece_slot],
+            [(this.x + this.w), this.y,                         0, 0, 0, 0,       1, 1,   piece_slot],
+            [(this.x + this.w), (this.y + this.h),              0, 0, 0, 0,       1, 0,   piece_slot],
+            [(this.x + this.w), (this.y + this.h),              0, 0, 0, 0,       1, 0,   piece_slot],
+            [this.x, (this.y + this.h),                         0, 0, 0, 0,       0, 0,   piece_slot],
+            [this.x, this.y,                                    0, 0, 0, 0,       0, 1,   piece_slot]
+        );
+    }
+    has_target(button) {
+        return this.targets.includes(button)
+    }
+    add_target(button) {
+        button.is_target = true
+        this.targets = this.targets.concat(button)
+    }
+    clear_targets() {
+        this.targets.forEach(target => target.is_target = false)
+        this.targets = []
+    }
+}
+class Box {
+    constructor(gl, x, y, is_active) {
+        this.gl = gl
+        this.x = x
+        this.y = y
+        this.is_active = is_active
+        this.buttons = []
+        this.previous_button = null
+    }
+    add_button(button) {
+        button.add_offset(this.x, this.y)
+        this.buttons = this.buttons.concat(button)
+    }
+    render() {
+        if (this.buttons.length !== 0) {
+            let buffer = []
+            let len = 0
+            this.buttons.forEach(button => {
+                const vertices = button.vertices
+                buffer = buffer.concat(vertices.to_array())
+                len += vertices.length
+            })
+            this.gl.bufferSubData(this.gl.ARRAY_BUFFER, 0, new Float32Array(buffer))
+            this.gl.drawArrays(this.gl.TRIANGLES, 0, len)
+            this.buttons.forEach(button => button.render())
+        }
+    }
+    click(x, y) {
+        this.buttons.forEach(button => button.click(x, y))
+    }
+    hover(x, y) {
+        this.buttons.forEach(button => button.hover(x, y))
+    }
+}
 
 const x = 10, y = 10, w = 50, h = 50;
 
@@ -419,6 +430,7 @@ function main() {
     const ctx = document.getElementById("text").getContext('2d')
     const canvas = document.getElementById("canvas")
     const html = document.getElementById("html")
+    const container = document.getElementById('container')
     if (html.clientWidth <= 600) {
         canvas.width = html.clientWidth - 10
     }
@@ -427,24 +439,23 @@ function main() {
     ctx.canvas.width = canvas.width
     ctx.canvas.height = canvas.height
     const gl = canvas.getContext('webgl2')
-
     const win = new Window(gl)
-    window.addEventListener('click', event => {
-        win.click(event.clientX - canvas.offsetLeft, canvas.height - (event.clientY - canvas.offsetTop))
+    container.addEventListener('click', event => {
+        win.click(event.clientX - container.offsetLeft, canvas.clientHeight - (event.clientY + 10))
     })
 
-    const renderCallback = () => {
-        ctx.save()
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-        ctx.fillStyle = "white"
-        ctx.font = '20px Courier New, monospace'
-        ctx.fillText("Foo Bar", 10, canvas.height - 70)
-        ctx.restore()
-        gl.clearColor(0, 0, 0, 1)
-        gl.clear(gl.COLOR_BUFFER_BIT)
-        gl.bufferSubData(gl.ARRAY_BUFFER, 0, buffer.to_float_array())
-        gl.drawArrays(gl.TRIANGLES, 0, buffer.length)
-    }
+    // const renderCallback = () => {
+    //     ctx.save()
+    //     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+    //     ctx.fillStyle = "white"
+    //     ctx.font = '20px Courier New, monospace'
+    //     ctx.fillText("Foo Bar", 10, canvas.height - 70)
+    //     ctx.restore()
+    //     gl.clearColor(0, 0, 0, 1)
+    //     gl.clear(gl.COLOR_BUFFER_BIT)
+    //     gl.bufferSubData(gl.ARRAY_BUFFER, 0, buffer.to_float_array())
+    //     gl.drawArrays(gl.TRIANGLES, 0, buffer.length)
+    // }
 
     window.addEventListener('resize', () => {
         if (html.clientWidth <= 600) {
@@ -452,12 +463,33 @@ function main() {
         }
         else canvas.width = 600
         canvas.height = canvas.width * ( 2 / 3 );
-        renderCallback()
+        win.render()
     })
-    window.addEventListener('load', renderCallback)
-    Window.load_texture(gl, 2, "bp")
-    Window.load_texture(gl, 1, "wp")
-    win.render(renderCallback)
+    window.addEventListener('load', () => win.render())
+    Window.load_texture(gl,1, "br", "download");
+    Window.load_texture(gl,2, "bn");
+    Window.load_texture(gl,3, "bb");
+    Window.load_texture(gl,4, "bq");
+    Window.load_texture(gl,5, "bk");
+    Window.load_texture(gl,6, "wr");
+    Window.load_texture(gl,7, "wn");
+    Window.load_texture(gl,8, "wb");
+    Window.load_texture(gl,9, "wq");
+    Window.load_texture(gl,10, "wk");
+    Window.load_texture(gl,11, "bp");
+    Window.load_texture(gl,12, "wp");
+    Window.load_texture(gl,13, "dot");
+    Window.load_texture(gl,14, "target");
+
+    const box = new Box(gl, 0, 0, true)
+    box.add_button(new ChessButton(0, 0, 50, 50, [1, 1, 1], _ => {
+        console.log('hi')
+    }, 'K'))
+    box.add_button(new ChessButton(50, 0, 50, 50, [0, 0, 0], _ => {
+        console.log('lol')
+    }, 'q'))
+    win.add_box(box)
+    win.render()
 }
 
 main()
