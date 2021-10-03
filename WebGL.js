@@ -483,10 +483,10 @@ function main() {
 
     const box = new Box(gl, 0, 0, true)
     box.add_button(new ChessButton(0, 0, 50, 50, [1, 1, 1], _ => {
-        console.log('hi')
+        alert('hi')
     }, 'K'))
     box.add_button(new ChessButton(50, 0, 50, 50, [0, 0, 0], _ => {
-        console.log('lol')
+        alert('lol')
     }, 'q'))
     win.add_box(box)
     win.render()
