@@ -111,7 +111,7 @@ class Texture {
         const isPowerOf2 = value => (value & (value - 1)) === 0
         image.addEventListener('load', () => {
             this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
-            this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, image);
+            this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, image.width, image.height, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, image);
             if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
                 this.gl.generateMipmap(this.gl.TEXTURE_2D);
             } else {
@@ -233,25 +233,6 @@ class Window {
                                     colour = texture(tex[15], vTexCord);
                                     break;
                             }
-                        }`
-        )
-        this.fontShader = new Shader(gl,
-            `#version 300 es
-                      layout (location = 0) in vec4 aPos;
-                      layout (location = 2) in vec2 aTexCord;
-                      out vec2 vTexCord;
-                      uniform mat4 mvp;
-                      void main() {
-                          gl_Position = mvp * aPos;
-                          vTexCord = aTexCord;
-                      }`,
-            `#version 300 es
-                        precision mediump float;
-                        in vec2 vTexCord;
-                        out vec4 colour;
-                        uniform sampler2D tex;
-                        void main() {
-                            colour = texture(tex, vTexCord);
                         }`
         )
     }
