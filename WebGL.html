@@ -9,12 +9,23 @@
             margin: auto;
             padding: 5px;
         }
+        .container {
+            position: relative;
+        }
+        #text {
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
     </style>
     <title>WebGL</title>
 </head>
 <body id="body" class="content">
-<canvas id="canvas"></canvas>
-<script src="gl-matrix-min.js"></script>
-<script src="WebGL.js"></script>
+    <div class="container" id="container">
+        <canvas id="canvas"></canvas>
+        <canvas id="text"></canvas>
+        <script src="gl-matrix-min.js"></script>
+        <script src="WebGL.js"></script>
+    </div>
 </body>
 </html>
