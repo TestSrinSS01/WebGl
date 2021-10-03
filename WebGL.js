@@ -457,7 +457,7 @@ function main() {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
         ctx.fillStyle = "white"
         ctx.font = '20px Courier New, monospace'
-        ctx.fillText("Srinjoy Sinha", 10, canvas.height - 70)
+        ctx.fillText("Foo Bar", 10, canvas.height - 70)
         ctx.restore()
         gl.clearColor(0, 0, 0, 1)
         gl.clear(gl.COLOR_BUFFER_BIT)
