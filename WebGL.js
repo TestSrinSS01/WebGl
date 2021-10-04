@@ -151,7 +151,7 @@ class Window {
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
         this.tex = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
         this.vao = new VertexArray(gl)
-        this.vbo = new VertexBuffer(gl, new Float32Array(1600), gl.DYNAMIC_DRAW)
+        this.vbo = new VertexBuffer(gl, new Float32Array(16000), gl.DYNAMIC_DRAW)
         this.layout = new Layout()
         this.layout.add(2, 0)
         this.layout.add(4, 2)
@@ -320,17 +320,17 @@ class ChessButton extends Button {
             target_slot = texture.slot
         }
         let piece_slot = 0
-        if (this.piece !== '\0') {
+        if (this.piece) {
             const texture = Window.textures[Window.pieces_map[this.piece]]
             texture.bind()
             piece_slot = texture.slot
         }
         return new Buffer(
             [this.x, this.y,                            this.colour[0], this.colour[1], this.colour[2], 1,    0, 0,    0],
-            [(this.x + this.w), this.y,                     this.colour[0], this.colour[1], this.colour[2], 1,    0, 0,    0],
-            [(this.x + this.w), (this.y + this.h),     this.colour[0], this.colour[1], this.colour[2], 1,    0, 0,    0],
-            [(this.x + this.w), (this.y + this.h),     this.colour[0], this.colour[1], this.colour[2], 1,    0, 0,    0],
-            [this.x, (this.y + this.h),                    this.colour[0], this.colour[1], this.colour[2], 1,    0, 0,    0],
+            [(this.x + this.w), this.y,                         this.colour[0], this.colour[1], this.colour[2], 1,    0, 0,    0],
+            [(this.x + this.w), (this.y + this.h),              this.colour[0], this.colour[1], this.colour[2], 1,    0, 0,    0],
+            [(this.x + this.w), (this.y + this.h),              this.colour[0], this.colour[1], this.colour[2], 1,    0, 0,    0],
+            [this.x, (this.y + this.h),                         this.colour[0], this.colour[1], this.colour[2], 1,    0, 0,    0],
             [this.x, this.y,                                    this.colour[0], this.colour[1], this.colour[2], 1,    0, 0,    0],
 
             [this.x, this.y,                                    0, 0, 0, 0,       0, 1,   target_slot],
@@ -395,38 +395,9 @@ class Box {
     }
 }
 
-const x = 10, y = 10, w = 50, h = 50;
-
-const buffer = new Buffer(
-    [x, y,              1, 0, 0, 1,     0, 0,   0],
-    [x + w, y,          1, 0, 0, 1,      0, 0,   0],
-    [x + w,  y + h,     1, 0, 0, 1,      0, 0,   0],
-    [x + w,  y + h,     1, 0, 0, 1,      0, 0,   0],
-    [x,  y + h,         1, 0, 0, 1,      0, 0,   0],
-    [x, y,              1, 0, 0, 1,      0, 0,   0],
-
-    [x, y,              0, 0, 0, 0,      0, 1,   1],
-    [x + w, y,          0, 0, 0, 0,      1, 1,   1],
-    [x + w,  y + h,     0, 0, 0, 0,      1, 0,   1],
-    [x + w,  y + h,     0, 0, 0, 0,      1, 0,   1],
-    [x,  y + h,         0, 0, 0, 0,      0, 0,   1],
-    [x, y,              0, 0, 0, 0,      0, 1,   1],
-
-    [x + w, y,              1, 1, 0, 1,      0, 0,   0],
-    [x + w * 2, y,          1, 1, 0, 1,      0, 0,   0],
-    [x + w * 2,  y + h,     1, 1, 0, 1,      0, 0,   0],
-    [x + w * 2,  y + h,     1, 1, 0, 1,      0, 0,   0],
-    [x + w,  y + h,         1, 1, 0, 1,      0, 0,   0],
-    [x + w, y,              1, 1, 0, 1,      0, 0,   0],
-
-    [x + w, y,              0, 0, 0, 0,      0, 1,   2],
-    [x + w * 2, y,          0, 0, 0, 0,      1, 1,   2],
-    [x + w * 2,  y + h,     0, 0, 0, 0,      1, 0,   2],
-    [x + w * 2,  y + h,     0, 0, 0, 0,      1, 0,   2],
-    [x + w,  y + h,         0, 0, 0, 0,      0, 0,   2],
-    [x + w, y,              0, 0, 0, 0,      0, 1,   2]
-)
 function main() {
+    const chess = new Chess("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", 'w', "-", "-")
+    console.log(chess.fen)
     const ctx = document.getElementById("text").getContext('2d')
     const canvas = document.getElementById("canvas")
     const html = document.getElementById("html")
@@ -482,12 +453,13 @@ function main() {
     Window.load_texture(gl,14, "target");
 
     const box = new Box(gl, 0, 0, true)
-    box.add_button(new ChessButton(0, 0, 50, 50, [1, 1, 1], _ => {
-        alert('hi')
-    }, 'K'))
-    box.add_button(new ChessButton(50, 0, 50, 50, [0, 0, 0], _ => {
-        alert('lol')
-    }, 'q'))
+    for (let i = 0; i < 64; i++) {
+        const rank = i >>> 3;
+        const file = i & 7;
+        box.add_button(new ChessButton(file * 50, rank * 50, 50, 50, (rank + file) % 2 === 0? [0, 0, 0]: [1, 1, 1], it => {
+            alert(it.piece)
+        }, chess.board[i]))
+    }
     win.add_box(box)
     win.render()
 }
