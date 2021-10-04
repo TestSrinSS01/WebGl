@@ -1,4 +1,7 @@
 // noinspection DuplicatedCode
+const ctx = document.getElementById("text").getContext('2d')
+const canvas = document.getElementById("canvas")
+const html = document.getElementById("html")
 
 class VertexBuffer {
     constructor(gl, buffer, usage) {
@@ -249,7 +252,7 @@ class Window {
         this.gl.clearColor(0, 0, 0, 1)
         this.gl.clear(this.gl.COLOR_BUFFER_BIT)
         const mvp = glMatrix.mat4.create()
-        glMatrix.mat4.ortho(mvp, 0, 600, 0, 400, -1, 1)
+        glMatrix.mat4.ortho(mvp, 0, 400, 0, 400, -1, 1)
         this.shader.use()
         this.shader.setUniformMat4fv("mvp", mvp)
         this.shader.setUniform1iv("tex", this.tex)
@@ -398,17 +401,17 @@ class Box {
 function main() {
     const chess = new Chess("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", 'w', "-", "-")
     console.log(chess.fen)
-    const ctx = document.getElementById("text").getContext('2d')
-    const canvas = document.getElementById("canvas")
-    const html = document.getElementById("html")
     const container = document.getElementById('container')
-    if (html.clientWidth <= 600) {
-        canvas.width = html.clientWidth - 10
+    const resize_callback = () => {
+        if (html.clientWidth <= 400) {
+            canvas.width = html.clientWidth - 10
+        }
+        else canvas.width = 400
+        canvas.height = canvas.width * 1
+        ctx.canvas.width = canvas.width
+        ctx.canvas.height = canvas.height
     }
-    else canvas.width = 600
-    canvas.height = canvas.width * (2 / 3)
-    ctx.canvas.width = canvas.width
-    ctx.canvas.height = canvas.height
+    resize_callback()
     const gl = canvas.getContext('webgl2')
     const win = new Window(gl)
     container.addEventListener('click', event => {
@@ -428,14 +431,7 @@ function main() {
     //     gl.drawArrays(gl.TRIANGLES, 0, buffer.length)
     // }
 
-    window.addEventListener('resize', () => {
-        if (html.clientWidth <= 600) {
-            canvas.width = html.clientWidth - 10;
-        }
-        else canvas.width = 600
-        canvas.height = canvas.width * ( 2 / 3 );
-        win.render()
-    })
+    window.addEventListener('resize', () => resize_callback())
     window.addEventListener('load', () => win.render())
     Window.load_texture(gl,1, "br", "download");
     Window.load_texture(gl,2, "bn");
